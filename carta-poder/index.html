@@ -44,6 +44,13 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
 .f input.up{text-transform:uppercase}
 .f input:focus,.f select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
 .f input.miss{border-color:var(--warn);background:var(--warn-bg)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:4px}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:8px 6px;border-radius:6px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg input:checked + span{background:var(--accent);color:var(--accent-fg)}
+.seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.side-group{display:flex;flex-direction:column;gap:14px}
 .check{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
 .check input{width:18px;height:18px;accent-color:var(--accent)}
 .hint{font-size:11.5px;color:var(--muted);margin:0}
@@ -74,6 +81,11 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
 .ap td:first-child{width:22pt}.ap td:last-child{width:26%}
 .firma{display:flex;justify-content:space-between;align-items:flex-start;margin-top:30pt}
 .firma p{margin:0 0 12pt}
+.firmas{display:flex;justify-content:space-between;align-items:flex-start;gap:18pt;margin-top:26pt}
+.firmas .rep{flex:1;min-width:0;max-width:230pt}
+.firmas .rep p{margin:0 0 12pt;display:flex;gap:4pt;white-space:nowrap}
+.firmas .rep p i{flex:1;border-bottom:1px solid #000;margin-bottom:3pt}
+.sello{width:110pt;height:80pt;border:1px dashed #000;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3pt;font-size:10pt;flex:none}
 .huella{width:80pt;height:95pt;border:1px solid #000;margin-right:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3pt;font-size:11pt}
 .pdfhost{position:fixed;left:0;top:0;z-index:-5;pointer-events:none;background:#fff}
 .pdfhost:empty{display:none}
@@ -125,9 +137,33 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);fon
       <datalist id="tipos"><option>MOTOCICLETA</option><option>TRIMOTO CARGA</option><option>TRIMOTO PASAJEROS</option><option>SCOOTER</option><option>CUATRIMOTO</option></datalist>
     </section>
 
-    <section class="card" id="own1"></section>
-    <label class="check card" style="flex-direction:row"><input type="checkbox" id="dos">Hay un segundo propietario (sale una carta para cada uno)</label>
-    <section class="card" id="own2" hidden></section>
+    <section class="card">
+      <p class="label">3 · Propietario</p>
+      <div class="seg" role="radiogroup" aria-label="Tipo de propietario">
+        <label><input type="radio" name="ptipo" value="natural" checked><span>Persona natural</span></label>
+        <label><input type="radio" name="ptipo" value="empresa"><span>Empresa</span></label>
+      </div>
+    </section>
+    <div class="side-group" id="g-natural">
+      <section class="card" id="own1"></section>
+      <label class="check card" style="flex-direction:row"><input type="checkbox" id="dos">Hay un segundo propietario (sale una carta para cada uno)</label>
+      <section class="card" id="own2" hidden></section>
+    </div>
+    <div class="side-group" id="g-empresa" hidden>
+      <section class="card">
+        <p class="label">Datos de la empresa</p>
+        <div class="grid2">
+          <label class="f full">Razón social<input class="up" id="erazon" placeholder="TRANSPORTES XYZ S.A.C."></label>
+          <label class="f">RUC<input id="eruc" inputmode="numeric" maxlength="11" placeholder="20xxxxxxxxx"></label>
+          <label class="f">Celular<input id="ecel" inputmode="tel" placeholder="9xx xxx xxx"></label>
+          <label class="f full">Domicilio fiscal<input class="up" id="edom" placeholder="JR. ... – HUAMANGA"></label>
+        </div>
+      </section>
+      <section class="card" id="rep1"></section>
+      <label class="check card" style="flex-direction:row"><input type="checkbox" id="dosrep">Firman dos representantes (en la misma carta)</label>
+      <section class="card" id="rep2" hidden></section>
+      <datalist id="cargos"><option>GERENTE GENERAL</option><option>TITULAR GERENTE</option><option>GERENTE</option><option>APODERADO</option><option>REPRESENTANTE LEGAL</option><option>PRESIDENTE DEL DIRECTORIO</option></datalist>
+    </div>
 
     <section class="card">
       <p class="label">Fecha de la carta</p>
@@ -161,7 +197,7 @@ const C = window.CARTA || {};
 
 /* ---------- Formulario de propietarios ---------- */
 function ownerForm(n){
-  return `<p class="label">${n === 1 ? "3 · Propietario" : "Segundo propietario"}</p>
+  return `<p class="label">${n === 1 ? "Datos del propietario" : "Segundo propietario"}</p>
   <div class="grid2">
     <label class="f full">Nombres y apellidos (como en el DNI)<input class="up" id="p${n}nombre" placeholder="NOMBRES APELLIDO PATERNO MATERNO"></label>
     <label class="f">DNI<input id="p${n}dni" inputmode="numeric" maxlength="8" placeholder="8 dígitos"></label>
@@ -170,6 +206,16 @@ function ownerForm(n){
     <label class="f full">Es<select id="p${n}gen"><option value="propietario">propietario (hombre)</option><option value="propietaria">propietaria (mujer)</option></select></label>
   </div>`;
 }
+function repForm(n){
+  return `<p class="label">${n === 1 ? "Representante legal" : "Segundo representante"}</p>
+  <div class="grid2">
+    <label class="f full">Nombres y apellidos (como en el DNI)<input class="up" id="r${n}nombre" placeholder="NOMBRES APELLIDO PATERNO MATERNO"></label>
+    <label class="f">DNI<input id="r${n}dni" inputmode="numeric" maxlength="8" placeholder="8 dígitos"></label>
+    <label class="f">Cargo<input class="up" id="r${n}cargo" list="cargos" placeholder="GERENTE GENERAL"></label>
+  </div>`;
+}
+$("rep1").innerHTML = repForm(1);
+$("rep2").innerHTML = repForm(2);
 $("own1").innerHTML = ownerForm(1);
 $("own2").innerHTML = ownerForm(2);
 const VEH = ["tipo","marca","modelo","chasis","motor","color"];
@@ -213,25 +259,64 @@ function letterHtml(o, v, fecha){
 </div>`;
 }
 
+function letterEmpresa(e, v, fecha){
+  const color = v.color2 ? `COLOR ORIGINAL: ${esc(v.color)}, COLOR ACTUAL: ${esc(v.color2)}` : `COLOR: ${ph(v.color,8)}`;
+  const aps = (C.apoderados || []).map((a,i) => `<tr><td>${i+1}</td><td>${esc(a.nombre)}</td><td>${esc(a.dni)}</td></tr>`).join("");
+  const dos = e.reps.length > 1;
+  const quien = r => `<b>${ph(r.nombre,30)}</b>, identificado(a) con DNI Nº <b>${ph(r.dni,10)}</b>, en calidad de <b>${ph(r.cargo,16)}</b>`;
+  const intro = dos ? `Nosotros, ${quien(e.reps[0])}, y ${quien(e.reps[1])}, de la empresa` : `Yo, ${quien(e.reps[0])} de la empresa`;
+  const firma = `<div class="rep"><p>Firma:<i></i></p><p>Nombres:<i></i></p><p>Apellidos:<i></i></p><p>DNI:<i></i></p></div>`;
+  return `<div class="page">
+  <p class="r">${esc(C.ciudad || "Ayacucho")}, ${ph(fecha,16)}.</p>
+  <p>Señores</p>
+  <p><b>${esc(C.destinatario || "")}</b></p>
+  <p>${esc(C.oficina || "")}</p>
+  <p><u>Presente.</u> -</p>
+  <p class="j">${intro} <b>${ph(e.razon,26)}</b>, con RUC Nº <b>${ph(e.ruc,12)}</b>, con domicilio fiscal en <b>${ph(e.dom,30)}</b> y Nº de celular ${ph(e.cel,12)}, empresa propietaria del vehículo <b>${ph(v.tipo,12)} MARCA: ${ph(v.marca,10)}, MODELO: ${ph(v.modelo,10)}, CHASIS: ${ph(v.chasis,18)} MOTOR: ${ph(v.motor,14)}, ${color},</b> ${dos ? "tenemos a bien dirigirnos" : "tengo a bien dirigirme"} a ustedes con el objeto de conferir poder específico para que, en nombre y representación de la empresa, las personas que a continuación se mencionan, puedan, indistintamente cualquiera de ellas, apersonarse a sus oficinas con el objeto de recoger la <b>PLACA</b> única nacional de rodaje <b>Nº ............................,</b> asignada al vehículo de propiedad de la empresa antes señalado, así como suscribir la constancia de entrega correspondiente.</p>
+  <p>Los apoderados designados mediante la presente carta son:</p>
+  <table class="ap"><tr><td><b>Nº</b></td><td><b>NOMBRES Y APELLIDOS</b></td><td><b>DNI</b></td></tr>${aps}</table>
+  <p>En consecuencia, agradeciéndoles por la atención prestada, ${dos ? "quedamos" : "quedo"} de ustedes.</p>
+  <p>Atentamente,</p>
+  <div class="firmas">${firma}${dos ? firma : ""}<div class="sello">Sello de la empresa</div></div>
+</div>`;
+}
+const modo = () => (document.querySelector('input[name="ptipo"]:checked') || {}).value || "natural";
+function setModo(m){
+  document.querySelectorAll('input[name="ptipo"]').forEach(r => r.checked = r.value === m);
+  $("g-natural").hidden = m !== "natural"; $("g-empresa").hidden = m !== "empresa";
+}
+function pagesHtml(s){ return s.modo === "empresa" ? letterEmpresa(s.e, s.v, s.fecha) : s.owners.map(o => letterHtml(o, s.v, s.fecha)).join(""); }
+
 function state(){
   const v = {}; VEH.forEach(k => v[k] = up(val(k))); v.color2 = up(val("color2"));
   const owners = [1].concat($("dos").checked ? [2] : []).map(n => ({
     n, nombre: up(val(`p${n}nombre`)), dni: val(`p${n}dni`).replace(/\D/g,""), cel: celFmt(val(`p${n}cel`)), dom: up(val(`p${n}dom`)), gen: $(`p${n}gen`).value
   }));
-  return {v, owners, fecha: fechaLarga($("fecha").value)};
+  const e = {
+    razon: up(val("erazon")), ruc: val("eruc").replace(/\D/g,""), dom: up(val("edom")), cel: celFmt(val("ecel")),
+    reps: [1].concat($("dosrep").checked ? [2] : []).map(n => ({ n, nombre: up(val(`r${n}nombre`)), dni: val(`r${n}dni`).replace(/\D/g,""), cargo: up(val(`r${n}cargo`)) }))
+  };
+  return {modo: modo(), v, owners, e, fecha: fechaLarga($("fecha").value)};
 }
 
 function render(){
   const s = state();
-  $("scaler").innerHTML = s.owners.map(o => letterHtml(o, s.v, s.fecha)).join("");
+  $("scaler").innerHTML = pagesHtml(s);
   const miss = [];
-  VEH.forEach(k => { const m = !s.v[k]; $(k).classList.toggle("miss", m); if (m) miss.push(LABEL[k]); });
-  s.owners.forEach(o => OWN.forEach(k => {
-    const bad = !o[k] || (k === "dni" && o.dni.length !== 8);
-    $(`p${o.n}${k}`).classList.toggle("miss", bad);
-    if (bad) miss.push(LABEL[k] + (s.owners.length > 1 ? ` (${o.n}º)` : ""));
-  }));
-  $("tt").textContent = s.owners.length > 1 ? "2 cartas de poder" : "Carta de poder";
+  const chk = (id, bad, lab) => { $(id).classList.toggle("miss", bad); if (bad) miss.push(lab); };
+  VEH.forEach(k => chk(k, !s.v[k], LABEL[k]));
+  if (s.modo === "empresa"){
+    chk("erazon", !s.e.razon, "razón social"); chk("eruc", !/^\d{11}$/.test(s.e.ruc), "RUC"); chk("edom", !s.e.dom, "domicilio fiscal"); chk("ecel", !s.e.cel, "celular");
+    s.e.reps.forEach(r => { const suf = s.e.reps.length > 1 ? ` (${r.n}º representante)` : " del representante";
+      chk(`r${r.n}nombre`, !r.nombre, "nombre" + suf); chk(`r${r.n}dni`, r.dni.length !== 8, "DNI" + suf); chk(`r${r.n}cargo`, !r.cargo, "cargo" + suf); });
+    $("tt").textContent = "Carta de poder · empresa";
+  } else {
+    s.owners.forEach(o => OWN.forEach(k => {
+      const bad = !o[k] || (k === "dni" && o.dni.length !== 8);
+      chk(`p${o.n}${k}`, bad, LABEL[k] + (s.owners.length > 1 ? ` (${o.n}º)` : ""));
+    }));
+    $("tt").textContent = s.owners.length > 1 ? "2 cartas de poder" : "Carta de poder";
+  }
   $("ts").textContent = miss.length ? `Falta: ${miss.join(", ")}` : `Lista para imprimir · ${s.fecha}`;
   $("ts").className = "sub" + (miss.length ? " warn" : "");
   fit();
@@ -250,10 +335,13 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 
 document.querySelector(".side").addEventListener("input", render);
 $("dos").addEventListener("change", () => { $("own2").hidden = !$("dos").checked; render(); });
+$("dosrep").addEventListener("change", () => { $("rep2").hidden = !$("dosrep").checked; render(); });
+document.querySelectorAll('input[name="ptipo"]').forEach(r => r.addEventListener("change", () => { setModo(modo()); render(); }));
 $("limpiar").onclick = () => {
-  document.querySelectorAll(".side input:not([type=checkbox]):not([type=date])").forEach(i => i.value = "");
+  document.querySelectorAll(".side input:not([type=checkbox]):not([type=date]):not([type=radio])").forEach(i => i.value = "");
   document.querySelectorAll(".side select").forEach(s => s.selectedIndex = 0);
-  $("dos").checked = false; $("own2").hidden = true; $("fecha").value = todayLima(); $("xmlok").hidden = true; render();
+  $("dos").checked = false; $("own2").hidden = true; $("dosrep").checked = false; $("rep2").hidden = true; setModo("natural");
+  $("fecha").value = todayLima(); $("xmlok").hidden = true; render();
 };
 
 /* ---------- Autollenado desde el XML de la boleta (SUNAT) ---------- */
@@ -297,15 +385,28 @@ async function loadXml(f){
     }
     const cp = path(root,"AccountingCustomerParty/Party"), idEl = path(cp,"PartyIdentification/ID");
     const docNum = tx(idEl), scheme = idEl ? idEl.getAttribute("schemeID") : "";
-    $("p1nombre").value = tx(path(cp,"PartyLegalEntity/RegistrationName"));
-    $("p1dni").value = scheme === "1" ? docNum : (/^10\d{9}$/.test(docNum) ? docNum.slice(2,10) : "");
-    const dir = tx(path(cp,"PartyLegalEntity/RegistrationAddress/AddressLine/Line"));
-    if (dir) $("p1dom").value = dir;
+    const nombreCli = tx(path(cp,"PartyLegalEntity/RegistrationName"));
+    const dir = tx(path(cp,"PartyLegalEntity/RegistrationAddress/AddressLine/Line")).trim();
     const notes = [...root.children].filter(c => c.localName === "Note").map(tx).join(" ");
     const cel = notes.match(/\b9\d{2}\s?\d{3}\s?\d{3}\b/);
-    if (cel) $("p1cel").value = celFmt(cel[0]);
+    const esEmpresa = scheme === "6" && /^20\d{9}$/.test(docNum);
+    let aviso;
+    if (esEmpresa){
+      setModo("empresa");
+      $("erazon").value = nombreCli; $("eruc").value = docNum;
+      if (dir) $("edom").value = dir;
+      if (cel) $("ecel").value = celFmt(cel[0]);
+      aviso = "Es una empresa: completa los datos del representante legal y revisa el domicilio fiscal.";
+    } else {
+      setModo("natural");
+      $("p1nombre").value = nombreCli;
+      $("p1dni").value = scheme === "1" ? docNum : (/^10\d{9}$/.test(docNum) ? docNum.slice(2,10) : "");
+      if (dir) $("p1dom").value = dir;
+      if (cel) $("p1cel").value = celFmt(cel[0]);
+      aviso = "Revisa el nombre y completa el domicilio según el DNI.";
+    }
     $("xmlok").hidden = false;
-    $("xmlok").textContent = `Datos tomados de ${tx(ch(root,"ID"))}. Revisa el nombre y completa el domicilio según el DNI.` + (sp ? "" : " No encontré chasis ni motor en la boleta.");
+    $("xmlok").textContent = `Datos tomados de ${tx(ch(root,"ID"))}. ${aviso}` + (sp ? "" : " No encontré chasis ni motor en la boleta.");
     render();
   } catch(e){ toast("Ese archivo no es un XML de boleta o factura de SUNAT"); }
 }
@@ -323,10 +424,10 @@ $("pdf").onclick = async () => {
   const s = state(), btn = $("pdf"), host = $("pdfhost");
   btn.disabled = true; btn.textContent = "Generando…";
   try {
-    host.innerHTML = '<div id="pdfdoc" style="width:8.5in;background:#fff">' + s.owners.map(o => letterHtml(o, s.v, s.fecha)).join("").replace(/class="ph"/g, 'class="phx"') + '</div>';
+    host.innerHTML = '<div id="pdfdoc" style="width:8.5in;background:#fff">' + pagesHtml(s).replace(/class="ph"/g, 'class="phx"') + '</div>';
     host.querySelectorAll(".page").forEach((p, i) => { p.style.boxShadow = "none"; if (i) p.classList.add("brk"); });
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    const name = ("Carta Camara Comercio - " + s.owners.map(o => o.nombre || "SIN NOMBRE").join(" y ")).replace(/[\\/:*?"<>|]+/g," ").slice(0,140) + ".pdf";
+    const name = ("Carta Camara Comercio - " + (s.modo === "empresa" ? (s.e.razon || "EMPRESA") : s.owners.map(o => o.nombre || "SIN NOMBRE").join(" y "))).replace(/[\\/:*?"<>|]+/g," ").slice(0,140) + ".pdf";
     await html2pdf().set({
       margin: 0, filename: name, image: {type:"jpeg", quality:0.97},
       html2canvas: {scale:2, backgroundColor:"#ffffff", scrollX:0, scrollY:0, x:0, y:0, windowWidth:816},
